@@ -1,17 +1,16 @@
 /* Copyright (c) 2014 Richard Rodger, MIT License */
 "use strict";
 
-
 var buffer = require('buffer')
 var util   = require('util')
 var net    = require('net')
 var stream = require('stream')
 
-
 var _    = require('underscore')
 var amqp = require('amqplib/callback_api')
 
 module.exports = function( options ) {
+
   var seneca = this
   var plugin = 'rabbitmq-transport'
 
@@ -19,16 +18,15 @@ module.exports = function( options ) {
 
   options = seneca.util.deepextend(
     {
-      redis: {
-        timeout:  so.timeout ? so.timeout-555 :  22222,
-        type:     'redis',
-        host:     'localhost',
-        port:     6379,
-      },
+      // pass default options.
+      rabbitmq:{
+        url:"amqp://localhost",
+        options:{}, // optional socket options.
+        queue_options:{} // optional queue options. 
+      }
     },
     so.transport,
     options)
-
 
   var tu = seneca.export('transport/utils')
 
@@ -40,8 +38,19 @@ module.exports = function( options ) {
     var seneca         = this
     var type           = args.type
     var listen_options = seneca.util.clean(_.extend({},options[type],args))
+    var sock_options = listen_options.options||{};
+    var queue_options = listen_options.queue_options;
 
-    amqp.connect('amqp://localhost', function (error, connection) {
+    // honor listen_options.port like other transports.
+    if(listen_options.port){
+      // this rabbitmq lib expects to parse custom ports from the url via url.parse
+      // https://github.com/squaremo/amqp.node/blob/master/lib/connect.js#L101
+      // if port is already provided as part of the url the port that is part of the url wins.
+      // this library doesnt use the parsed url.path so its safe to blindly concat the port on the end.
+      listen_options.url += ":"+listen_options.port
+    }
+
+    amqp.connect(listen_options.url, sock_options , function (error, connection) {
       if (error) return done(error)
 
       connection.createChannel(function (error, channel) {
@@ -49,14 +58,14 @@ module.exports = function( options ) {
 
         channel.on('error', done);
 
-        tu.listen_topics( seneca, args, listen_options, function ( topic ) {
+        tu.listen_topics(seneca, args, listen_options, function ( topic ) {
           var acttopic = topic+'_act'
           var restopic = topic+'_res'
 
           seneca.log.debug('listen', 'subscribe', acttopic, listen_options, seneca)
 
-          channel.assertQueue(acttopic)
-          channel.assertQueue(restopic)
+          channel.assertQueue(acttopic, queue_options)
+          channel.assertQueue(restopic, queue_options)
 
           // Subscribe
           channel.consume(acttopic, on_message);
@@ -112,8 +121,8 @@ module.exports = function( options ) {
 
           channel.on('error', send_done)
 
-          channel.assertQueue(acttopic)
-          channel.assertQueue(restopic)
+          channel.assertQueue(acttopic, queue_options)
+          channel.assertQueue(restopic, queue_options)
 
           seneca.log.debug('client', 'subscribe', restopic, client_options, seneca)
 
@@ -121,6 +130,8 @@ module.exports = function( options ) {
           channel.consume(restopic, function ( message ) {
             var content = message.content ? message.content.toString() : undefined
             var input = tu.parseJSON(seneca,'client-'+type,content)
+
+            channel.ack(message)
             tu.handle_response( seneca, input, client_options )
           })
 
@@ -128,7 +139,7 @@ module.exports = function( options ) {
           send_done( null, function ( args, done ) {
             var outmsg = tu.prepare_request( this, args, done )
             var outstr = tu.stringifyJSON( seneca, 'client-rabbitmq', outmsg )
-            channel.sendToQueue(acttopic, new Buffer(outstr));
+            channel.sendToQueue(acttopic, new Buffer(outstr))
           })
 
           seneca.add('role:seneca,cmd:close',function( close_args, done ) {
