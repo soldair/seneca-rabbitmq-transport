@@ -6,7 +6,7 @@ var async = require('async')
 
 
 var seneca = require('seneca')()
-  .use('rabbitmq-transport')
+  .use('..')
   .use('salestax', {
     country: {
       'FR': 0.20,
