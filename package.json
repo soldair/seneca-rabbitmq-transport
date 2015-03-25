@@ -1,10 +1,11 @@
 {
   "name": "seneca-rabbitmq-transport",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Seneca RabbitMQ transport",
   "main": "rabbitmq-transport.js",
   "scripts": {
-    "test": "mocha test/*.test.js"
+    "test": "mocha test/*.test.js",
+    "test-perf":"./test/perf.js"
   },
   "repository": {
     "type": "git",
