@@ -62,6 +62,12 @@ there are some example scripts on the test directory as well as a performace tes
 to run the performance test `npm run test-perf` or `./tests/perf.js`. ill avoid posting my numbers here.
 
 
+Issues
+------
+
+this transport will throw an exception of the rabbitmq connection goes away for any reason.
+
+
 Support
 -------
 
