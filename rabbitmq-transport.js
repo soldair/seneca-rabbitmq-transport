@@ -54,6 +54,15 @@ module.exports = function( options ) {
     amqp.connect(listen_options.url, sock_options , function (error, connection) {
       if (error) return done(error)
 
+      // TODO
+      // this gets called whenever the conection to rabbit is closed.
+      // its real easy to reproduce with `sudo rabbitmqctl stop_app && sudo rabbitmqctl start_app`
+      // I need to reconnect here.
+      //
+      //connection.on('error',function(){
+      /// TODO !!
+      //})
+
       connection.createChannel(function (error, channel) {
         if (error) return done(error);
 
@@ -70,9 +79,6 @@ module.exports = function( options ) {
           channel.consume(acttopic, on_message,{noAck:true});
 
           function on_message ( message ) {
-
-
-            //console.log('[server] got rpc.',message.content.toString(),message.properties);
 
             var content = message.content ? message.content.toString() : undefined
             var data = tu.parseJSON( seneca, 'listen-'+type, content )

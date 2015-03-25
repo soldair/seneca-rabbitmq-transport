@@ -3,6 +3,7 @@ seneca-rabbitmq-transport
 
 Seneca micro-services message transport over RabbitMQ messaging.
 
+[![Build Status](https://travis-ci.org/soldair/seneca-rabbitmq-transport.png?branch=master)](https://travis-ci.org/rjrodger/seneca-rabbitmq-transport)
 
 Seneca Rabbitmq Transport Plugin
 --------------------------------
@@ -32,7 +33,6 @@ A single server from the pool of available servers will be given a message. and 
 
 ALSO READ: The [seneca-transport](http://github.com/rjrodger/seneca-transport) readme has lots of introductory material about message transports. Start there if you have not used a message transport before.
 
-[![Build Status](https://travis-ci.org/rjrodger/seneca-transport.png?branch=master)](https://travis-ci.org/rjrodger/seneca-transport)
 
 For a gentle introduction to Seneca itself, see the
 [senecajs.org](http://senecajs.org) site.
